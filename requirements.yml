@@ -1,0 +1,61 @@
+
+- name: unattended_upgrades
+  src: https://github.com/autechgemz/ansible-role-unattended_upgrades.git
+  version: 1.0.1
+
+- name: needrestart
+  src: https://github.com/autechgemz/ansible-role-needrestart.git
+  version: 1.0.1
+
+- name: logrotate
+  src: https://github.com/autechgemz/ansible-role-logrotate.git
+  version: 1.0.1
+
+- name: sysstat
+  src: https://github.com/autechgemz/ansible-role-sysstat.git
+  version: master
+
+- name: journald
+  src: https://github.com/autechgemz/ansible-role-journald.git
+  version: 1.0.0
+
+- name: sshd
+  src: https://github.com/autechgemz/ansible-role-sshd.git
+  version: develop
+  #version: 1.1.0
+
+- name: sysctl
+  src: https://github.com/autechgemz/ansible-role-sysctl.git
+  version: 1.0.1
+
+- name: sudo
+  src: https://github.com/autechgemz/ansible-role-sudo.git
+  version: 1.0.1
+
+- name: sshguard
+  src: https://github.com/autechgemz/ansible-role-sshguard.git
+  version: 1.0.1
+
+- name: timezone
+  src: https://github.com/autechgemz/ansible-role-timezone.git
+  version: 1.0.0
+
+- name: rsyslog
+  src: https://github.com/autechgemz/ansible-role-rsyslog.git
+  version: 1.0.1
+
+- name: tcpd
+  src: https://github.com/autechgemz/ansible-role-tcpd.git
+  version: 1.0.1
+
+- name: auditd
+  src: https://github.com/autechgemz/ansible-role-auditd.git
+  version: 1.0.1
+
+- name: chronyd
+  src: https://github.com/autechgemz/ansible-role-chronyd.git
+  version: 1.0.1
+
+- name: ufw
+  src: https://github.com/autechgemz/ansible-role-ufw.git
+  version: 1.0.0

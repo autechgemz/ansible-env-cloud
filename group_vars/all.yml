@@ -1,0 +1,91 @@
+---
+
+timezone: Asia/Tokyo
+
+unattended_upgrades_service_ensure: 'stopped'
+unattended_upgrades_service_enable: false
+
+sshd_server_config_options:
+  Protocol: '2'
+  PermitRootLogin: 'no'
+  PasswordAuthentication: 'no'
+  PermitEmptyPasswords: 'no'
+  ChallengeResponseAuthentication: 'no'
+  UsePAM: 'no'
+  UseDNS: 'no'
+  AcceptEnv:
+    - 'LANG LC_*'
+  SyslogFacility: 'AUTHPRIV'
+  LogLevel: 'VERBOSE'
+  IgnoreRhosts: 'yes'
+  Subsystem: ""
+  X11Forwarding: 'no'
+  ListenAddress: '0.0.0.0'
+  PubkeyAuthentication: 'yes'
+  GSSAPIAuthentication: 'no'
+  GSSAPICleanupCredentials: 'no'
+  PrintMotd: 'no'
+  MaxStartups: '3'
+  HostKey:
+    - /etc/ssh/ssh_host_ed25519_key
+    - /etc/ssh/ssh_host_rsa_key
+  Ciphers: chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr
+  KexAlgorithms: sntrup761x25519-sha512@openssh.com,curve25519-sha256,curve25519-sha256@libssh.org,gss-curve25519-sha256-,diffie-hellman-group16-sha512,gss-group16-sha512-,diffie-hellman-group18-sha512,diffie-hellman-group-exchange-sha256
+  MACs: hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com,umac-128-etm@openssh.com
+  HostKeyAlgorithms: ssh-ed25519,ssh-ed25519-cert-v01@openssh.com,sk-ssh-ed25519@openssh.com,sk-ssh-ed25519-cert-v01@openssh.com,rsa-sha2-512,rsa-sha2-512-cert-v01@openssh.com,rsa-sha2-256,rsa-sha2-256-cert-v01@openssh.com
+
+sshguard_execmode: 'nftables'
+
+sshguard_config_options:
+  BACKEND: "/usr/libexec/sshguard/sshg-fw-nft-sets"
+  LOGREADER: "LANG=C journalctl -afb -p info -n1 -t sshd -o cat"
+  THRESHOLD: 30
+  BLOCK_TIME: 120
+  DETECTION_TIME: 1800
+  WHITELIST_FILE: /etc/sshguard/whitelist
+
+sshguard_config_whitelist:
+  - 127.0.0.0/8
+  - ::1/128
+  - 10.0.0.0/8
+  - 172.16.0.0/16
+  - 192.168.1.0/24
+
+rsyslog_global_config_options:
+  - 'module(load="imuxsock")'
+  - 'module(load="imklog" permitnonkernelfacility="on")'
+  - '$ActionFileDefaultTemplate RSYSLOG_TraditionalFileFormat'
+  - '$RepeatedMsgReduction on'
+  - '$FileOwner syslog'
+  - '$FileGroup adm'
+  - '$FileCreateMode 0640'
+  - '$DirCreateMode 0755'
+  - '$Umask 0022'
+  - '$PrivDropToUser syslog'
+  - '$PrivDropToGroup syslog'
+  - '$WorkDirectory /var/spool/rsyslog'
+  - '$IncludeConfig /etc/rsyslog.d/*.conf'
+
+logrotate_global_config_options:
+  - 'weekly'
+  - 'su root adm'
+  - 'rotate 4'
+  - 'create'
+  - 'include /etc/logrotate.d'
+
+sysstat_daemon_config_options:
+  ENABLED: "true"
+sysstat_config_options:
+  HISTORY: 31
+  COMPRESSAFTER: 10
+  SADC_OPTIONS: "-S DISK"
+  SA_DIR: /var/log/sysstat
+  ZIP: "xz"
+  DELAY_RANGE: 0
+  UMASK: "0022"
+#sysstat_config_crondata: |
+#  PATH=/usr/lib/sysstat:/usr/sbin:/usr/sbin:/usr/bin:/sbin:/bin
+#  * * * * * root /usr/lib/sysstat/sa1 1 60
+sysstat_config_crondata: |
+  PATH=/usr/lib/sysstat:/usr/sbin:/usr/sbin:/usr/bin:/sbin:/bin
+  * * * * * root /usr/lib64/sa/sa1 1 60

@@ -1,0 +1,19 @@
+---
+
+- hosts: all
+  roles:
+    - timezone
+    - chronyd
+    - needrestart
+    - unattended_upgrades
+    - journald
+    - rsyslog
+    - logrotate
+    - sudo
+    - sysstat
+    - sysctl
+    - sshd
+    - sshguard
+    - tcpd
+    - ufw
+    - auditd
