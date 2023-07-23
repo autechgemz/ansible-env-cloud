@@ -1,0 +1,172 @@
+---
+
+- name: Wordpress tasks
+  hosts: all
+  become: true
+  user: ubuntu
+  tasks:
+    - name: MySQL install tasks
+      ansible.builtin.apt:
+        name: "{{ mysql_package_name }}"
+        update_cache: true
+        state: present
+      vars:
+        mysql_package_name:
+          - mysql-server
+          - mysql-client
+          - python3-mysqldb
+
+    - name: MySQL remove anonymous user
+      community.mysql.mysql_user:
+        name: ''
+        login_user: "{{ mysql_root_name }}"
+        login_password: "{{ mysql_root_password }}"
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+        state: absent
+      vars:
+        mysql_root_name: "root"
+        mysql_root_password: "wordpress"
+
+    - name: MySQL root password config
+      community.mysql.mysql_user:
+        name: "{{ mysql_root_name }}"
+        password: "{{ mysql_root_password }}"
+        login_user: "{{ mysql_root_name }}"
+        login_password: "{{ mysql_root_password }}"
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+        check_implicit_admin: false
+        state: present
+      vars:
+        mysql_root_name: "root"
+        mysql_root_password: "wordpress"
+
+    - name: MySQL create wordpress user
+      community.mysql.mysql_user:
+        name: "{{ mysql_username }}"
+        password: "{{ mysql_password }}"
+        login_user: "{{ mysql_root_name }}"
+        login_password: "{{ mysql_root_password }}"
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+        priv: 'wordpress.*:ALL'
+        state: present
+      vars:
+        mysql_root_name: "root"
+        mysql_root_password: "wordpress"
+        mysql_username: "wordpress"
+        mysql_password: "wordpress"
+
+    - name: MySQL default character set
+      ansible.builtin.lineinfile:
+        path: /etc/mysql/conf.d/mysql.cnf
+        insertafter: '\[mysqld\]'
+        line: 'default-character-set=utf8mb4'
+
+    - name: MySQL character set
+      ansible.builtin.lineinfile:
+        dest: /etc/mysql/mysql.conf.d/mysqld.cnf
+        insertafter: '\[mysqld\]'
+        line: "character-set-server=utf8mb4"
+
+    - name: MySQL create database
+      community.mysql.mysql_db:
+        login_user: "{{ mysql_root_name }}"
+        login_password: "{{ mysql_root_password }}"
+        name: "{{ db_name }}"
+        state: present
+        encoding: utf8mb4
+      vars:
+        mysql_root_name: "root"
+        mysql_root_password: "wordpress"
+        db_name: "wordpress"
+
+    - name: Web install tasks
+      ansible.builtin.apt:
+        name: "{{ web_package_name }}"
+        update_cache: true
+        state: present
+      vars:
+        web_package_name:
+          - nginx
+          - php-cli
+          - php-mbstring
+          - php-pear
+          - php-fpm
+          - php-mysql
+          - php-curl
+          - php-dom
+          - php-imagick
+          - php-zip
+          - php-intl
+
+    - name: Download Wordpress archive
+      ansible.builtin.get_url:
+        url: https://wordpress.org/latest.tar.gz
+        dest: /root/latest.tar.gz
+        mode: '0644'
+
+    - name: Exstract Wordpress archive
+      ansible.builtin.unarchive:
+        src: /root/latest.tar.gz
+        dest: /var/www/html
+        remote_src: true
+        owner: www-data
+
+    - name: Remove site default
+      ansible.builtin.file:
+        path: /etc/nginx/sites-enabled/default
+        state: absent
+
+    - name: Generate nginx config
+      ansible.builtin.blockinfile:
+        path: /etc/nginx/conf.d/wordpress.conf
+        block: |
+          server {
+            listen 80;
+            server_name _;
+            root /var/www/html;
+            index index.php;
+
+            charset utf-8;
+
+            location / {
+              try_files $uri $uri/ =404;
+            }
+
+            location ~* /wp-config.php {
+              deny all;
+            }
+
+            location ~ \.php$ {
+              fastcgi_pass unix:/var/run/php/php-fpm.sock;
+              include snippets/fastcgi-php.conf;
+            }
+
+            location ~ .*\.(jpg|gif|png|css|js|ico|woff) {
+              expires 10d;
+              access_log off;
+              log_not_found off;
+            }
+
+          }
+        mode: '0644'
+        create: true
+        state: present
+      notify:
+        - Restart nginx
+
+    - name: Generate wp-config.php
+      ansible.builtin.template:
+        src: wp-config.php.j2
+        dest: /var/www/html/wordpress/wp-config.php
+        owner: www-data
+        group: nogroup
+        mode: '0644'
+      notify:
+        - Restart nginx
+
+  handlers:
+    - name: Restart nginx
+      become: true
+      ansible.builtin.systemd:
+        name: nginx.service
+        state: restarted

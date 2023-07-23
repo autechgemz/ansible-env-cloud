@@ -1,0 +1,98 @@
+---
+
+- name: Zabbix tasks
+  hosts: all
+  become: true
+  user: ubuntu
+  tasks:
+    - name: Zabbix install tasks
+      ansible.builtin.apt:
+        name: "{{ zabbix_package_name }}"
+        update_cache: true
+        state: present
+      vars:
+        zabbix_package_name:
+          - zabbix-server-mysql
+          - zabbix-frontend-php
+          - zabbix-apache-conf
+          - zabbix-sql-scripts
+          - zabbix-agent2
+          - php-mysql
+          - php-gd
+          - php-bcmath
+          - php-net-socket
+          - python3-pymysql
+          - mysql-server
+          - mysql-client
+          - python3-mysqldb
+          - language-pack-ja-base
+          - language-pack-ja
+
+    - name: MySQL root password config
+      community.mysql.mysql_user:
+        name: "{{ mysql_root_name }}"
+        password: "{{ mysql_root_password }}"
+        login_user: "{{ mysql_root_name }}"
+        login_password: "{{ mysql_root_password }}"
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+        check_implicit_admin: false
+        state: present
+      vars:
+        mysql_root_name: "root"
+        mysql_root_password: "zabbix"
+
+    - name: MySQL remove anonymous user
+      community.mysql.mysql_user:
+        name: ''
+        login_user: "{{ mysql_root_name }}"
+        login_password: "{{ mysql_root_password }}"
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+        state: absent
+      vars:
+        mysql_root_name: "root"
+        mysql_root_password: "zabbix"
+
+    - name: MySQL create zabbix user
+      community.mysql.mysql_user:
+        name: "{{ mysql_zabbix_name }}"
+        password: "{{ mysql_zabbix_password }}"
+        login_user: "{{ mysql_root_name }}"
+        login_password: "{{ mysql_root_password }}"
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+        priv: 'zabbix.*:ALL'
+        state: present
+      vars:
+        mysql_root_name: "root"
+        mysql_root_password: "zabbix"
+        mysql_zabbix_name: "zabbix"
+        mysql_zabbix_password: "zabbix"
+
+    - name: MySQL default character set
+      ansible.builtin.lineinfile:
+        path: /etc/mysql/conf.d/mysql.cnf
+        insertafter: '\[mysqld\]'
+        line: 'default-character-set=utf8mb4'
+
+    - name: MySQL character set
+      ansible.builtin.lineinfile:
+        dest: /etc/mysql/mysql.conf.d/mysqld.cnf
+        insertafter: '\[mysqld\]'
+        line: "character-set-server=utf8mb4"
+
+    - name: Create MySQL Database
+      community.mysql.mysql_db:
+        login_user: "{{ mysql_root_name }}"
+        login_password: "{{ mysql_root_password }}"
+        name: "{{ zabbix_db_name }}"
+        state: present
+        encoding: utf8mb4
+      vars:
+        mysql_root_name: "root"
+        mysql_root_password: "zabbix"
+        zabbix_db_name: "zabbix"
+
+    - name: Set MySQL User
+      ansible.builtin.lineinfile:
+        path: /etc/zabbix/zabbix_server.conf
+        insertafter: '^# DBPassword='
+        line: 'DBPassword=zabbix'

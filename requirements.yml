@@ -13,7 +13,7 @@
 
 - name: sysstat
   src: https://github.com/autechgemz/ansible-role-sysstat.git
-  version: master
+  version: 1.0.0
 
 - name: journald
   src: https://github.com/autechgemz/ansible-role-journald.git
@@ -58,4 +58,8 @@
 
 - name: ufw
   src: https://github.com/autechgemz/ansible-role-ufw.git
+  version: 1.0.0
+
+- name: apparmor
+  src: https://github.com/autechgemz/ansible-role-apparmor.git
   version: 1.0.0

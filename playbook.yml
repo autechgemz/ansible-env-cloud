@@ -17,3 +17,4 @@
     - tcpd
     - ufw
     - auditd
+    - apparmor
