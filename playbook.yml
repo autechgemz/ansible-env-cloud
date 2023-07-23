@@ -2,19 +2,19 @@
 
 - hosts: all
   roles:
-    - timezone
-    - chronyd
-    - needrestart
-    - unattended_upgrades
-    - journald
-    - rsyslog
-    - logrotate
-    - sudo
-    - sysstat
-    - sysctl
-    - sshd
-    - sshguard
-    - tcpd
-    - ufw
-    - auditd
-    - apparmor
+    - autechgemz.timezone
+    - autechgemz.chronyd
+    - autechgemz.needrestart
+    - autechgemz.unattended_upgrades
+    - autechgemz.journald
+    - autechgemz.rsyslog
+    - autechgemz.logrotate
+    - autechgemz.sudo
+    - autechgemz.sysstat
+    - autechgemz.sysctl
+    - autechgemz.sshd
+    - autechgemz.sshguard
+    - autechgemz.tcpd
+    - autechgemz.ufw
+    - autechgemz.auditd
+    - autechgemz.apparmor
