@@ -1,0 +1,81 @@
+---
+
+- hosts: all
+  tasks:
+  - name: Ubuntu initial setup
+    when: ansible_facts['distribution'] == 'Ubuntu'
+    become: true
+    block:
+
+      - name: Disable initial service and timer
+        ansible.builtin.systemd:
+          name: "{{ item }}"
+          state: stopped
+          enabled: false
+          daemon_reload: true
+          masked: true
+        loop:
+          - apt-daily.service
+          - apt-daily-upgrade.service
+          - apt-daily.timer
+          - apt-daily-upgrade.timer
+          - ua-timer.service
+          - update-notifier-download.timer
+          - update-notifier-motd.timer
+          - motd-news.timer
+          - dpkg-db-backup.timer
+          - man-db.timer
+          #- getty@tty1.service
+          #- systemd-logind.service
+
+      - name: Disable motd-news
+        ansible.builtin.replace:
+          dest: /etc/default/motd-news
+          regexp: 'ENABLED=1'
+          replace: 'ENABLED=0'
+
+      - name: Collect motd update scripts
+        ansible.builtin.find:
+          paths: /etc/update-motd.d
+          patterns: "*"
+        register: motd_scripts
+
+      - name: Assemble motd update scripts
+        ansible.builtin.set_fact:
+          motd_update_scripts: "{{ motd_scripts['files'] | flatten | map(attribute='path') }}"
+        when: motd_scripts is defined
+
+      - name: Disable motd update scripts
+        ansible.builtin.file:
+          path: "{{ item }}"
+          mode: u-x,g-x,o-x
+        with_items: "{{ motd_update_scripts }}"
+
+      - name: Disable hushlogin
+        ansible.builtin.lineinfile:
+          path: /etc/profile.d/disable_hushlogin.sh
+          line: 'test -f $HOME/.hushlogin || touch $HOME/.hushlogin'
+          mode: u+x,g+x,o+x
+          create: true
+
+      - name: Install initial setup packages
+        ansible.builtin.apt:
+          name: "{{ initial_packages }}"
+          update_cache: true
+          state: present
+        vars:
+          initial_packages:
+            - net-tools
+            - curl
+            - git
+            - vim
+
+      - name: Remove unnecessary packages
+        ansible.builtin.apt:
+          name: "{{ remove_packages }}"
+          purge: true
+          state: absent
+        vars:
+          remove_packages:
+            - systemd-timesyncd
+            - nano
