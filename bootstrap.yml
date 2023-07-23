@@ -3,8 +3,8 @@
 - hosts: all
   tasks:
 
-    - name: Install community.general
-      ansible.builtin.command: ansible-galaxy collection install community.general
+    #- name: Install community.general
+    #  ansible.builtin.command: ansible-galaxy collection install community.general
     - name: Install collections and roles
       community.general.ansible_galaxy_install:
         type: both
